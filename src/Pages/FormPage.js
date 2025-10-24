@@ -81,11 +81,22 @@ useEffect(() => {
 
       if (data.success) {
         // ✅ Save combined details (customer + vendor)
+
         const fullDetails = { ...form };
         localStorage.setItem("customerVendorDetails", JSON.stringify(fullDetails));
 
+        // Also update loggedUser so MainPage can access it
+        localStorage.setItem("loggedUser", JSON.stringify({ ...user, ...fullDetails }));
+
         setUserExistsMsg("Customer details saved successfully!");
         setTimeout(() => navigate("/main"), 1000);
+
+
+        // const fullDetails = { ...form };
+        // localStorage.setItem("customerVendorDetails", JSON.stringify(fullDetails));
+
+        // setUserExistsMsg("Customer details saved successfully!");
+        // setTimeout(() => navigate("/main"), 1000);
 
         // setTimeout(() => navigate("/main", { state: { formData: fullDetails } }), 1000);
 
