@@ -219,7 +219,7 @@ const handleScan = () => {
       }
 
       const orderData = { orderId: newOrderId, user, models: scannedModels };
-      await fetch(`${ApiBaseUrl}/api/orders`, {
+      await fetch(`${ApiBaseUrl}/api/itemorders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
