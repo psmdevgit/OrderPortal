@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef  } from "react";
 // import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -84,9 +84,20 @@ export default function MainPage({ user }) {
   const [models, setModels] = useState([]);
   const [scannedModels, setScannedModels] = useState([]);
 
+  const refreshBtnRef = useRef(null);
+
+  useEffect(() => {
+    // Trigger the hidden button click once
+    if (!user) {
+    console.log("Page refresh triggered!");
+    window.location.reload(); // Full page reload
+    }
+  }, []);
+
+
   
   const ApiBaseUrl = "https://kalash.app";
-  const imageapi = "http://192.168.5.13:8080/models/";
+  const imageapi = "https://psmport.pothysswarnamahalapp.com/FactoryModels/";
   
   // const ApiBaseUrl = "http://localhost:4001";
   // const imageapi = "http://192.168.5.13:8080/models/";
@@ -215,38 +226,28 @@ const handleScan = () => {
       });
 
 
-       const doc = new jsPDF();
-
+    const doc = new jsPDF();
 const pageWidth = doc.internal.pageSize.getWidth();
 
-// ✅ Centered Logo (Top)
-const logoWidth = 30;
-const logoHeight = 30;
-const logoY = 10; // top margin
-doc.addImage(
-  logo,
-  "PNG",
-  (pageWidth - logoWidth) / 2, // center horizontally
-  logoY,
-  logoWidth,
-  logoHeight
-);
+// ✅ Skip logo section (removed)
+// const logoWidth = 30;
+// const logoHeight = 30;
+// const logoY = 10; 
+// doc.addImage(logo, "PNG", (pageWidth - logoWidth) / 2, logoY, logoWidth, logoHeight);
 
-// ✅ Company Name below logo
+// ✅ Company Name at top (centered)
 doc.setFontSize(18);
 doc.setFont("helvetica", "bold");
-doc.text("Kalash Jewellers Pvt Ltd", pageWidth / 2, logoY + logoHeight + 10, {
-  align: "center",
-});
+doc.text(user.vendorName, pageWidth / 2, 20, { align: "center" });
 
-// ✅ Add a thin separator line under title (optional, looks neat)
+// ✅ Add a thin separator line
 doc.setLineWidth(0.3);
-doc.line(10, logoY + logoHeight + 14, pageWidth - 10, logoY + logoHeight + 14);
+doc.line(10, 24, pageWidth - 10, 24);
 
-// ✅ Now move to user/order details below
+// ✅ Order/user details
 doc.setFontSize(12);
 doc.setFont("helvetica", "normal");
-let startY = logoY + logoHeight + 24;
+let startY = 30;
 
 doc.text(`Order ID: ${newOrderId}`, 14, startY);
 doc.text(
@@ -256,27 +257,23 @@ doc.text(
   { align: "right" }
 );
 
-if(user.role === "vendor"){
-    startY += 8;
-    doc.text(`Name : ${user.name || user.customerName}`, 14, startY);
-    startY += 6;
-    doc.text(`Mobile : ${user.mobile || user.customerMobile}`, 14, startY);
+if (user.role === "vendor") {
+  startY += 8;
+  doc.text(`Name : ${user.name || user.customerName}`, 14, startY);
+  startY += 6;
+  doc.text(`Mobile : ${user.mobile || user.customerMobile}`, 14, startY);
 }
 
-if(user.role === "customer"){
-    startY += 8;
-    doc.text(`Name : ${user.customerName || user.name}`, 14, startY);
-    startY += 6;
-    doc.text(`Mobile : ${user.customerMobile || user.mobile}`, 14, startY);
-    startY += 6;
-    doc.text(`Vendor Name : ${user.vendorName || user.name}`, 14, startY);
-    startY += 6;
-    doc.text(`Vendor Mobile : ${user.vendorMobile || user.mobile}`, 14, startY);
+if (user.role === "customer") {
+  startY += 8;
+  doc.text(`Name : ${user.customerName || user.name}`, 14, startY);
+  startY += 6;
+  doc.text(`Mobile : ${user.customerMobile || user.mobile}`, 14, startY);
+  startY += 6;
+  doc.text(`Vendor Name : ${user.vendorName || user.name}`, 14, startY);
+  startY += 6;
+  doc.text(`Vendor Mobile : ${user.vendorMobile || user.mobile}`, 14, startY);
 }
-
-
-// startY += 6;
-// doc.text(`Role : ${user.role}`, 14, startY);
 
 // ✅ Space before models list
 startY += 12;
@@ -286,41 +283,32 @@ startY += 6;
 
 // ✅ Table-like layout for models
 doc.setFont("helvetica", "normal");
+let totalQty = 0;
+
 scannedModels.forEach((m, i) => {
   const line = `${i + 1}. ${m.name}`;
   const qty = `Qty: ${m.quantity}`;
   doc.text(line, 14, startY);
   doc.text(qty, pageWidth - 14, startY, { align: "right" });
+  totalQty += m.quantity;
   startY += 7;
 });
 
+// ✅ Add total quantity at end
+startY += 6;
+doc.setFont("helvetica", "bold");
+doc.text(`Total Quantity: ${totalQty}`, 14, startY);
 
-// Convert PDF to Base64
-    const pdfBlob = doc.output("blob");
-    const pdfBase64 = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(",")[1]);
-      reader.readAsDataURL(pdfBlob);
-    });
+// ✅ Convert PDF to Base64
+const pdfBlob = doc.output("blob");
+const pdfBase64 = await new Promise((resolve) => {
+  const reader = new FileReader();
+  reader.onloadend = () => resolve(reader.result.split(",")[1]);
+  reader.readAsDataURL(pdfBlob);
+});
 
     console.log(user);
-    // Step 4: Send email via backend
-    // const emailData = {
-    //   to:
-    //     user.role === "customer"
-    //       ? user.customerEmail
-    //       : user.email,
-    //   subject: `Order Confirmation - ${newOrderId}`,
-    //   message: `Hello ${user.role === "customer" ? user.customerName : user.name},\n\nPlease find attached your order confirmation for ${newOrderId}.`,
-    //   filename: `${newOrderId}.pdf`,
-    //   pdfBase64,
-    // };
 
-    //     await fetch(`${ApiBaseUrl}/api/send-email`, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(emailData),
-    // });
     
     const emailData = {
         customerEmail: user.customerEmail,
@@ -356,6 +344,8 @@ doc.save(`${newOrderId}.pdf`);
         <Typography variant="h5" mb={2}>
           Scan Models
         </Typography>
+
+     
 
         {/* Scan Input */}
         <Box display="flex" mb={2}>

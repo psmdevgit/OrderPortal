@@ -60,6 +60,9 @@ export default function CartPage({ user }) {
 
   const ApiBaseUrl = "https://kalash.app";
 
+  
+  const imageapi = "https://psmport.pothysswarnamahalapp.com/FactoryModels/";
+
   // ✅ Step 1: Restore user from localStorage if missing
   useEffect(() => {
     if (!user) {
@@ -179,7 +182,7 @@ export default function CartPage({ user }) {
                             <TableCell>
                               <ModelImage
                                 modelPath={item.ModelNo}
-                                baseUrl="http://192.168.5.13:8080/models/"
+                                baseUrl={imageapi}
                               />
                             </TableCell>
                             <TableCell>
