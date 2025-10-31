@@ -159,21 +159,55 @@ if (!currentUser) {
 }
  
 
+// const handleScan = () => {
+//   const trimmedCode = scanCode.trim();
+//   if (!trimmedCode) return;
+
+//   // Take last segment after last dot
+//   const lastSegment = trimmedCode.split(".").pop(); // e.g., BGPL-9999
+
+//   // Match 4 letters + '-' + digits
+//   const match = lastSegment.match(/([a-zA-Z]{4}-\d+)/i);
+//   if (!match) {
+//     alert("Invalid scan code format! Must be like ABCD-1234");
+//     return;
+//   }
+
+//   const modelCode = match[1].toUpperCase(); // e.g., BGPL-9999
+
+//   // Check if already scanned
+//   const exists = scannedModels.find((m) => m.code === modelCode);
+//   if (exists) {
+//     alert(`${modelCode} already scanned!`);
+//     setScanCode("");
+//     return;
+//   }
+
+//   // Add new scanned model
+//   setScannedModels((prev) => [
+//     ...prev,
+//     { code: modelCode, name: modelCode, quantity: 1 },
+//   ]);
+
+//   console.log("model : ", scannedModels);
+
+//   setScanCode(""); // clear input
+// };
+
+
 const handleScan = () => {
   const trimmedCode = scanCode.trim();
   if (!trimmedCode) return;
 
-  // Take last segment after last dot
-  const lastSegment = trimmedCode.split(".").pop(); // e.g., BGPL-9999
+  // Extract everything from the first letter to the dash-number part
+  const match = trimmedCode.match(/[A-Za-z]+-\d+/);
 
-  // Match 4 letters + '-' + digits
-  const match = lastSegment.match(/([a-zA-Z]{4}-\d+)/i);
   if (!match) {
     alert("Invalid scan code format! Must be like ABCD-1234");
     return;
   }
 
-  const modelCode = match[1].toUpperCase(); // e.g., BGPL-9999
+  const modelCode = match[0].toUpperCase(); // e.g., KJLHG-1234
 
   // Check if already scanned
   const exists = scannedModels.find((m) => m.code === modelCode);
@@ -189,12 +223,9 @@ const handleScan = () => {
     { code: modelCode, name: modelCode, quantity: 1 },
   ]);
 
-  console.log("model : ", scannedModels);
-
+  console.log("model : ", modelCode);
   setScanCode(""); // clear input
 };
-
-
 
 
   const handleQuantityChange = (code, value) => {
@@ -547,8 +578,6 @@ const handleScan = () => {
 
     
     <Box>
-
-      
       <Navbar user={currentUser} />
       <Box p={3}>
         <Typography variant="h5" mb={2}>
