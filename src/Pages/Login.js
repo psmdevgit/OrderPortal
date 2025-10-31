@@ -60,7 +60,7 @@ function Login({ setUser }) {
       }
     } catch (error) {
       console.error("❌ Login error:", error);
-      setErrorMsg("Server error. Please try again.");
+      setErrorMsg(data.message || "Invalid password and mobile number.");
     }
   };
 
