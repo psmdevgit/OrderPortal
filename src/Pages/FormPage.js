@@ -137,7 +137,7 @@ setUserDetails(fullDetails);
           <Stack spacing={2} mt={1}>
             <TextField label="Customer Mobile" name="customerMobile" value={form.customerMobile} onChange={handleChange} fullWidth required type="number" />
             <TextField label="Customer Name" name="customerName" value={form.customerName} onChange={handleChange} fullWidth required />
-            <TextField label="Customer Email" name="customerEmail" value={form.customerEmail} onChange={handleChange} fullWidth required />
+            <TextField label="Customer Email" name="customerEmail" value={form.customerEmail} onChange={handleChange} fullWidth />
             <TextField label="Vendor Name" name="vendorName" value={form.vendorName} onChange={handleChange} fullWidth disabled />
             <TextField label="Vendor Mobile" name="vendorMobile" value={form.vendorMobile} onChange={handleChange} fullWidth disabled />
 
