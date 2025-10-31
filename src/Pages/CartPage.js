@@ -1,4 +1,5 @@
 import Navbar from "../components/NavBar";
+import jsPDF from "jspdf"; 
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -100,6 +101,116 @@ export default function CartPage({ user }) {
     );
   }
 
+   const cleanText = (txt) => (txt ? String(txt).trim() : "");
+
+const previewPdf = async (order) => {
+  try {
+    // Generate vendor PDF for that specific order
+    const { pdfBlob: vendorPdf } = await generateOrderPDF(order, user, "vendor");
+
+    // Open in new tab
+    window.open(URL.createObjectURL(vendorPdf), "_blank");
+  } catch (err) {
+    console.error("Error generating PDF:", err);
+    alert("Error generating PDF. Please check console.");
+  }
+};
+
+const generateOrderPDF = async (order, user, type) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // ✅ Header
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text(
+    type === "vendor" ? cleanText(user.vendorName) : cleanText(user.customerName),
+    pageWidth / 2,
+    20,
+    { align: "center" }
+  );
+
+  doc.setLineWidth(0.3);
+  doc.line(10, 24, pageWidth - 10, 24);
+
+  // ✅ Order Info
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  let startY = 30;
+
+  doc.text(`Order ID: ${cleanText(order.OrderId)}`, 14, startY);
+  doc.text(
+    `Date: ${new Date(order.createdDate).toLocaleString()}`,
+    pageWidth - 14,
+    startY,
+    { align: "right" }
+  );
+
+  startY += 10;
+
+  // ✅ Vendor vs Customer info
+  if (type === "vendor") {
+    doc.text(`Vendor: ${cleanText(user.vendorName)}`, 14, startY);
+    startY += 6;
+    doc.text(`Mobile: ${cleanText(user.vendorMobile)}`, 14, startY);
+    startY += 6;
+    doc.text(`Customer: ${cleanText(user.customerName)}`, 14, startY);
+    startY += 6;
+    doc.text(`Customer Mobile: ${cleanText(user.customerMobile)}`, 14, startY);
+  } else {
+    doc.text(`Customer: ${cleanText(user.customerName)}`, 14, startY);
+    startY += 6;
+    doc.text(`Mobile: ${cleanText(user.customerMobile)}`, 14, startY);
+    startY += 6;
+    doc.text(`Vendor: ${cleanText(user.vendorName)}`, 14, startY);
+    startY += 6;
+    doc.text(`Vendor Mobile: ${cleanText(user.vendorMobile)}`, 14, startY);
+  }
+
+  startY += 10;
+  doc.setFont("helvetica", "bold");
+  doc.text("Models List", 14, startY);
+  startY += 6;
+
+  // ✅ Models listing
+doc.setFont("helvetica", "normal");
+let totalQty = 0;
+
+order.items.forEach((m, i) => {
+  const line = `${cleanText(m.ModelNo)}`;   //${i + 1}.
+
+  // ensure quantity is numeric
+  const qtyNum = Number(m.Quantity) || 0;
+  const qty = `Qty: ${qtyNum}`;
+
+  doc.text(line, 14, startY);
+  doc.text(qty, pageWidth - 14, startY, { align: "right" });
+
+  totalQty += qtyNum; // ✅ accumulate as number
+  startY += 7;
+
+  // Auto new page if text reaches bottom
+  if (startY > 270) {
+    doc.addPage();
+    startY = 20;
+  }
+});
+
+startY += 6;
+doc.setFont("helvetica", "bold");
+doc.text(`Total Quantity: ${totalQty}`, 14, startY);
+
+  // ✅ Convert to Blob
+  const pdfBlob = doc.output("blob");
+  const pdfBase64 = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(",")[1]);
+    reader.readAsDataURL(pdfBlob);
+  });
+
+  return { pdfBase64, pdfBlob };
+};
+
   // ✅ Step 4: Render Orders
   return (
     <Box sx={{ pb: 5, bgcolor: "#f9f9f9", minHeight: "100vh" }}>
@@ -142,6 +253,16 @@ export default function CartPage({ user }) {
                   {new Date(order.createdDate).toLocaleString()}
                 </Typography>
               </Box>
+
+              {order.items?.length > 0 && (
+               <Button
+  variant="contained"
+  onClick={() => previewPdf(order)} // wrapped in arrow function
+>
+  Preview PDF
+</Button>
+
+              )}
 
               {order.items?.length > 0 && (
                 <Box sx={{ mt: 2 }}>
