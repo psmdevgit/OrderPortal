@@ -43,12 +43,24 @@ function App() {
 
   return (
     <Router>
-      <Routes>
+      {/* <Routes>
         <Route path="/" element={<Login setUser={setUser} />} />
         <Route path="/form" element={<FormPage user={user} />} />
         <Route path="/main" element={<MainPage user={userDetails} />} />
         <Route path="/cart" element={<CartPage user={userDetails} />} />
-      </Routes>
+      </Routes> */}
+
+      <Routes>
+  <Route path="/" element={<Login setUser={setUser} />} />
+  <Route
+    path="/form"
+    element={<FormPage user={user} setUserDetails={setUserDetails} />}
+  />
+  <Route path="/main" element={<MainPage user={userDetails} />} />
+  <Route path="/cart" element={<CartPage user={userDetails} />} />
+</Routes>
+
+
     </Router>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LogoutIcon from "@mui/icons-material/Logout";
 
@@ -62,6 +63,60 @@ function Navbar({ user }) {
         flex={1}
         gap={isMobile ? 0.5 : 1.5}
       >
+        
+          
+{/* <Button
+  variant="contained"
+  sx={{
+    backgroundColor: "grey.500",
+    color: "#fff",
+    "&:hover": { backgroundColor: "grey.700" },
+  }}
+  onClick={() => {
+    localStorage.removeItem("customerVendorDetails");
+    navigate("/form");
+  }}
+>
+  Back
+</Button> */}
+
+  {isMobile ? (
+    // 👇 Mobile View (use back icon)
+    <Tooltip title="Back">
+      <IconButton
+        color="inherit"
+        onClick={() => {
+          localStorage.removeItem("customerVendorDetails");
+          navigate("/form");
+        }}
+      >
+        <ArrowBackIcon />
+      </IconButton>
+    </Tooltip>
+  ) : (
+    // 👇 Desktop View (use full Back button)
+    <Button
+      variant="contained"
+      sx={{
+        backgroundColor: "grey.500",
+        color: "#fff",
+        "&:hover": { backgroundColor: "grey.700" },
+      }}
+      onClick={() => {
+        localStorage.removeItem("customerVendorDetails");
+        navigate("/form");
+      }}
+    >
+      Back
+    </Button>
+  )}
+
+
+
+
+
+
+
         {isMobile ? (
           <>
             {pathname === "/main" && (

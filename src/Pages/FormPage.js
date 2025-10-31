@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Box, Paper, TextField, Button, Stack, Typography } from "@mui/material";
 
-export default function FormPage({ user }) {
+export default function FormPage({ user , setUserDetails}) {
   const navigate = useNavigate();
 
   // ✅ Initialize user from localStorage if prop not available
@@ -50,6 +50,24 @@ useEffect(() => {
   }
 }, [user]);
 
+useEffect(() => {
+  const savedData = JSON.parse(localStorage.getItem("customerVendorDetails"));
+  if (savedData) setForm(savedData);
+}, []);
+
+
+
+// useEffect(() => {
+//   if (!localStorage.getItem("customerVendorDetails")) {
+//     setForm((prev) => ({
+//       ...prev,
+//       customerName: "",
+//       customerMobile: "",
+//       customerEmail: "",
+//     }));
+//   }
+// }, []);
+
 
 
   // ✅ Handle input changes
@@ -84,9 +102,10 @@ useEffect(() => {
 
         const fullDetails = { ...form };
         localStorage.setItem("customerVendorDetails", JSON.stringify(fullDetails));
+setUserDetails(fullDetails);
 
         // Also update loggedUser so MainPage can access it
-        localStorage.setItem("loggedUser", JSON.stringify({ ...user, ...fullDetails }));
+        // localStorage.setItem("loggedUser", JSON.stringify({ ...user, ...fullDetails }));
 
         setUserExistsMsg("Customer details saved successfully!");
         setTimeout(() => navigate("/main"), 1000);

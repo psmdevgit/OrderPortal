@@ -1,6 +1,8 @@
 
 
 import { useState, useEffect, useRef  } from "react";
+import { LoadingButton } from "@mui/lab";
+
 // import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -63,12 +65,22 @@ function ModelImage({ imageName, imageapi }) {
       component="img"
       image={src}
       alt={imageName}
-      sx={{
-        height: isMobile ? 125 : 170, // different image size for mobile/desktop
-        objectFit: "contain",
+      // sx={{
+      //   height: isMobile ? 125 : 170, // different image size for mobile/desktop
+      //   objectFit: "contain",
+      //   background: "#fafafa",
+      //   borderRadius: 1,
+      // }}
+
+        sx={{
+        width: "100%",
+        height: isMobile ? 120 : 170, // same height/width ratio for mobile
+        aspectRatio: isMobile ? "1 / 1" : "1/1", // keep square shape on mobile
+        objectFit: isMobile ? "contain" : "contain", // cover on mobile, contain on desktop
         background: "#fafafa",
         borderRadius: 1,
       }}
+
     />
   );
 }
@@ -84,6 +96,10 @@ export default function MainPage({ user }) {
   const [models, setModels] = useState([]);
   const [scannedModels, setScannedModels] = useState([]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
+
+
   const refreshBtnRef = useRef(null);
 
   useEffect(() => {
@@ -93,6 +109,18 @@ export default function MainPage({ user }) {
     window.location.reload(); // Full page reload
     }
   }, []);
+
+// let hasReloaded = false; // module-scoped variable
+
+// useEffect(() => {
+//   if (!user && !hasReloaded) {
+//     hasReloaded = true; // set flag
+//     console.log("Page refresh triggered!");
+//     window.location.reload();
+//   }
+// }, []);
+
+
 
 
   
@@ -191,7 +219,7 @@ const handleScan = () => {
     if (!confirmed) return;
 
     try {
-
+ setIsSaving(true); // ✅ Start loader
           // ✅ Step 1: Ensure all scanned models exist in modelmaster
           for (let m of scannedModels) {
             await fetch(`${ApiBaseUrl}/api/models/check-or-insert`, {
@@ -225,120 +253,302 @@ const handleScan = () => {
         body: JSON.stringify(orderData),
       });
 
+         // ✅ Step 4: Generate two PDFs
+      const { pdfBase64: vendorPdfBase64 } = await generateOrderPDF(
+          newOrderId,
+          user,
+          scannedModels,
+          "vendor"
+        );
 
-    const doc = new jsPDF();
-const pageWidth = doc.internal.pageSize.getWidth();
+        // const { pdfBase64: customerPdfBase64 } = await generateOrderPDF(
+        //   newOrderId,
+        //   user,
+        //   scannedModels,
+        //   "customer"
+        // );
 
-// ✅ Skip logo section (removed)
-// const logoWidth = 30;
-// const logoHeight = 30;
-// const logoY = 10; 
-// doc.addImage(logo, "PNG", (pageWidth - logoWidth) / 2, logoY, logoWidth, logoHeight);
+         // ✅ Step 5: Send vendor email
+        await fetch(`${ApiBaseUrl}/api/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: user.vendorEmail,
+            subject: `Order Confirmation - ${newOrderId}`,
+            message: `Dear ${user.vendorName},\n\nPlease find attached your order confirmation.`,
+            filename: `${newOrderId}_Vendor.pdf`,
+            pdfBase64: vendorPdfBase64,
+          }),
+        });
 
-// ✅ Company Name at top (centered)
-doc.setFontSize(18);
-doc.setFont("helvetica", "bold");
-doc.text(user.vendorName, pageWidth / 2, 20, { align: "center" });
+        // ✅ Step 6: Send customer email
+        // await fetch(`${ApiBaseUrl}/api/send-email`, {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({
+        //     to: user.customerEmail,
+        //     subject: `Order Confirmation - ${newOrderId}`,
+        //     message: `Dear ${user.customerName},\n\nPlease find attached your copy of the order confirmation.`,
+        //     filename: `${newOrderId}_Customer.pdf`,
+        //     pdfBase64: customerPdfBase64,
+        //   }),
+        // });
 
-// ✅ Add a thin separator line
-doc.setLineWidth(0.3);
-doc.line(10, 24, pageWidth - 10, 24);
+//     const doc = new jsPDF();
+// const pageWidth = doc.internal.pageSize.getWidth();
 
-// ✅ Order/user details
-doc.setFontSize(12);
-doc.setFont("helvetica", "normal");
-let startY = 30;
+// // ✅ Skip logo section (removed)
+// // const logoWidth = 30;
+// // const logoHeight = 30;
+// // const logoY = 10; 
+// // doc.addImage(logo, "PNG", (pageWidth - logoWidth) / 2, logoY, logoWidth, logoHeight);
 
-doc.text(`Order ID: ${newOrderId}`, 14, startY);
-doc.text(
-  `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
-  pageWidth - 14,
-  startY,
-  { align: "right" }
-);
+// // ✅ Company Name at top (centered)
+// doc.setFontSize(18);
+// doc.setFont("helvetica", "bold");
+// doc.text(user.vendorName, pageWidth / 2, 20, { align: "center" });
 
-if (user.role === "vendor") {
-  startY += 8;
-  doc.text(`Name : ${user.name || user.customerName}`, 14, startY);
-  startY += 6;
-  doc.text(`Mobile : ${user.mobile || user.customerMobile}`, 14, startY);
-}
+// // ✅ Add a thin separator line
+// doc.setLineWidth(0.3);
+// doc.line(10, 24, pageWidth - 10, 24);
 
-if (user.role === "customer") {
-  startY += 8;
-  doc.text(`Name : ${user.customerName || user.name}`, 14, startY);
-  startY += 6;
-  doc.text(`Mobile : ${user.customerMobile || user.mobile}`, 14, startY);
-  startY += 6;
-  doc.text(`Vendor Name : ${user.vendorName || user.name}`, 14, startY);
-  startY += 6;
-  doc.text(`Vendor Mobile : ${user.vendorMobile || user.mobile}`, 14, startY);
-}
+// // ✅ Order/user details
+// doc.setFontSize(12);
+// doc.setFont("helvetica", "normal");
+// let startY = 30;
 
-// ✅ Space before models list
-startY += 12;
-doc.setFont("helvetica", "bold");
-doc.text("Models List", 14, startY);
-startY += 6;
+// doc.text(`Order ID: ${newOrderId}`, 14, startY);
+// doc.text(
+//   `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+//   pageWidth - 14,
+//   startY,
+//   { align: "right" }
+// );
 
-// ✅ Table-like layout for models
-doc.setFont("helvetica", "normal");
-let totalQty = 0;
+// if (user.role === "vendor") {
+//   startY += 8;
+//   doc.text(`Name : ${user.name || user.customerName}`, 14, startY);
+//   startY += 6;
+//   doc.text(`Mobile : ${user.mobile || user.customerMobile}`, 14, startY);
+// }
 
-scannedModels.forEach((m, i) => {
-  const line = `${i + 1}. ${m.name}`;
-  const qty = `Qty: ${m.quantity}`;
-  doc.text(line, 14, startY);
-  doc.text(qty, pageWidth - 14, startY, { align: "right" });
-  totalQty += m.quantity;
-  startY += 7;
-});
+// if (user.role === "customer") {
+//   startY += 8;
+//   doc.text(`Name : ${user.customerName || user.name}`, 14, startY);
+//   startY += 6;
+//   doc.text(`Mobile : ${user.customerMobile || user.mobile}`, 14, startY);
+//   startY += 6;
+//   doc.text(`Vendor Name : ${user.vendorName || user.name}`, 14, startY);
+//   startY += 6;
+//   doc.text(`Vendor Mobile : ${user.vendorMobile || user.mobile}`, 14, startY);
+// }
 
-// ✅ Add total quantity at end
-startY += 6;
-doc.setFont("helvetica", "bold");
-doc.text(`Total Quantity: ${totalQty}`, 14, startY);
+// // ✅ Space before models list
+// startY += 12;
+// doc.setFont("helvetica", "bold");
+// doc.text("Models List", 14, startY);
+// startY += 6;
 
-// ✅ Convert PDF to Base64
-const pdfBlob = doc.output("blob");
-const pdfBase64 = await new Promise((resolve) => {
-  const reader = new FileReader();
-  reader.onloadend = () => resolve(reader.result.split(",")[1]);
-  reader.readAsDataURL(pdfBlob);
-});
+// // ✅ Table-like layout for models
+// doc.setFont("helvetica", "normal");
+// let totalQty = 0;
 
-    console.log(user);
+// scannedModels.forEach((m, i) => {
+//   const line = `${i + 1}. ${m.name}`;
+//   const qty = `Qty: ${m.quantity}`;
+//   doc.text(line, 14, startY);
+//   doc.text(qty, pageWidth - 14, startY, { align: "right" });
+//   totalQty += m.quantity;
+//   startY += 7;
+// });
+
+// // ✅ Add total quantity at end
+// startY += 6;
+// doc.setFont("helvetica", "bold");
+// doc.text(`Total Quantity: ${totalQty}`, 14, startY);
+
+// // ✅ Convert PDF to Base64
+// const pdfBlob = doc.output("blob");
+// const pdfBase64 = await new Promise((resolve) => {
+//   const reader = new FileReader();
+//   reader.onloadend = () => resolve(reader.result.split(",")[1]);
+//   reader.readAsDataURL(pdfBlob);
+// });
+
+//     console.log(user);
 
     
-    const emailData = {
-        customerEmail: user.customerEmail,
-        vendorEmail: user.vendorEmail,
-        to: user.vendorEmail,
-        subject: `Order Confirmation - ${newOrderId}`,
-        // message: `Hello ${user.role === "customer" ? user.customerName : user.name},\n\nPlease find attached your order confirmation for ${newOrderId}.`,        
-        message: `Please find attached your order confirmation for ${newOrderId}.`,
-        filename: `${newOrderId}.pdf`,
-        pdfBase64,
-      };
+//     const emailData = {
+//         customerEmail: user.customerEmail,
+//         vendorEmail: user.vendorEmail,
+//         to: user.vendorEmail,
+//         subject: `Order Confirmation - ${newOrderId}`,
+//         // message: `Hello ${user.role === "customer" ? user.customerName : user.name},\n\nPlease find attached your order confirmation for ${newOrderId}.`,        
+//         message: `Please find attached your order confirmation for ${newOrderId}.`,
+//         filename: `${newOrderId}.pdf`,
+//         pdfBase64,
+//       };
 
-      await fetch(`${ApiBaseUrl}/api/send-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(emailData),
-      });
+//       await fetch(`${ApiBaseUrl}/api/send-email`, {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(emailData),
+//       });
 
 
-doc.save(`${newOrderId}.pdf`);
+// doc.save(`${newOrderId}.pdf`);
       alert(`✅ Order ${newOrderId} saved & send to mail`);
       setScannedModels([]);
     } catch (err) {
       console.error("Error saving order:", err);
       alert("❌ Failed to save order!");
     }
+     finally {
+    setIsSaving(false); // ✅ Stop loader
+  }
+  };
+
+    // ✅ Clean text helper to remove newline or unsupported characters
+  const cleanText = (text) => {
+    if (!text) return "";
+    return text.toString().replace(/\n/g, " ").replace(/\r/g, " ");
+  };
+
+  // ✅ PDF generation function
+  const generateOrderPDF = async (newOrderId, user, scannedModels, type) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // ✅ Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      type === "vendor" ? cleanText(user.vendorName) : cleanText(user.customerName),
+      pageWidth / 2,
+      20,
+      { align: "center" }
+    );
+
+    doc.setLineWidth(0.3);
+    doc.line(10, 24, pageWidth - 10, 24);
+
+    // ✅ Order Info
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    let startY = 30;
+
+    doc.text(`Order ID: ${cleanText(newOrderId)}`, 14, startY);
+    doc.text(
+      `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+      pageWidth - 14,
+      startY,
+      { align: "right" }
+    );
+
+    startY += 10;
+
+    // ✅ Vendor vs Customer info
+    if (type === "vendor") {
+      doc.text(`Vendor: ${cleanText(user.vendorName)}`, 14, startY);
+      startY += 6;
+      doc.text(`Mobile: ${cleanText(user.vendorMobile)}`, 14, startY);
+      startY += 6;
+      doc.text(`Customer: ${cleanText(user.customerName)}`, 14, startY);
+      startY += 6;
+      doc.text(`Customer Mobile: ${cleanText(user.customerMobile)}`, 14, startY);
+    } else {
+      doc.text(`Customer: ${cleanText(user.customerName)}`, 14, startY);
+      startY += 6;
+      doc.text(`Mobile: ${cleanText(user.customerMobile)}`, 14, startY);
+      startY += 6;
+      doc.text(`Vendor: ${cleanText(user.vendorName)}`, 14, startY);
+      startY += 6;
+      doc.text(`Vendor Mobile: ${cleanText(user.vendorMobile)}`, 14, startY);
+    }
+
+    startY += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text("Models List", 14, startY);
+    startY += 6;
+
+    // ✅ Models listing
+    doc.setFont("helvetica", "normal");
+    let totalQty = 0;
+
+    scannedModels.forEach((m, i) => {
+      const line = `${i + 1}. ${cleanText(m.name)}`;
+      const qty = `Qty: ${m.quantity}`;
+      doc.text(line, 14, startY);
+      doc.text(qty, pageWidth - 14, startY, { align: "right" });
+      totalQty += m.quantity;
+      startY += 7;
+
+      // Auto new page if text reaches bottom
+      if (startY > 270) {
+        doc.addPage();
+        startY = 20;
+      }
+    });
+
+    startY += 6;
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Quantity: ${totalQty}`, 14, startY);
+
+    // ✅ Convert to Blob & Base64
+    const pdfBlob = doc.output("blob");
+    const pdfBase64 = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(",")[1]);
+      reader.readAsDataURL(pdfBlob);
+    });
+
+    return { pdfBase64, pdfBlob };
+  };
+
+  // ✅ Preview Button handler
+  const previewPdf = async () => {
+    try {
+
+         // ✅ Step 2: Get last order ID
+      const res = await fetch(`${ApiBaseUrl}/api/lastorder`);
+      const data = await res.json();
+      let newOrderId = "ORD1";
+      if (data.lastOrderId) {
+        const lastNum = parseInt(data.lastOrderId.replace("ORD", "")) || 0;
+        newOrderId = "ORD" + (lastNum + 1);
+      }
+
+      // Generate vendor PDF
+      const { pdfBlob: vendorPdf } = await generateOrderPDF(
+        newOrderId,
+        user,
+        scannedModels,
+        "vendor"
+      );
+
+      // Generate customer PDF
+      // const { pdfBlob: customerPdf } = await generateOrderPDF(
+      //   newOrderId,
+      //   user,
+      //   scannedModels,
+      //   "customer"
+      // );
+
+      // Open both in new tabs
+      // window.open(URL.createObjectURL(vendorPdf), "_blank");
+      window.open(URL.createObjectURL(vendorPdf), "_blank");
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      alert("Error generating PDF. Please check console.");
+    }
   };
 
   return (
+
+    
     <Box>
+
+      
       <Navbar user={currentUser} />
       <Box p={3}>
         <Typography variant="h5" mb={2}>
@@ -361,71 +571,94 @@ doc.save(`${newOrderId}.pdf`);
         </Box>
 
         {/* Cards Layout */}
-        {scannedModels.length > 0 && (
-          <Grid
-            container
-            spacing={2}
-            justifyContent={isMobile ? "center" : "flex-start"} // Center on mobile
-          >
-            {scannedModels.map((m) => (
-              <Grid item xs={6} sm={6} md={3} lg={3} key={m.code}>
-                <Card
-                  sx={{
-                    borderRadius: 2,
-                    boxShadow: 3,
-                    p: 1,
-                    height: "100%",
-                    width: "100%",
-                    transition: "transform 0.2s",
-                    "&:hover": { transform: "scale(1.02)" },
-                  }}
-                >
-                  <ModelImage imageName={m.name} imageapi={imageapi} />
-                  <CardContent sx={{ p: 1 }}>
-                    <Typography
-                      variant="subtitle1"
-                      fontWeight="bold"
-                      sx={{ mt: 1, textAlign: "center" }}
-                    >
-                      {m.name}
-                    </Typography>
+       {scannedModels.length > 0 && (
+  <Grid
+    container
+    spacing={5}
+    justifyContent={isMobile ? "center" : "flex-start"} // Center on mobile
+  >
+    {scannedModels.map((m) => (
+      <Grid item xs={6} sm={6} md={3} lg={3} key={m.code}>
+        <Card
+          sx={{
+            borderRadius: 2,
+            boxShadow: 3,
+            p: 1,
+            height: "100%",
+            width: "100%",
+            transition: "transform 0.2s",
+            "&:hover": { transform: "scale(1.02)" },
+          }}
+        >
+          <ModelImage imageName={m.name} imageapi={imageapi} />
+          <CardContent sx={{ p: 1 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              sx={{ mt: 1, textAlign: "center" }}
+            >
+              {m.name}
+            </Typography>
 
-                    {/* Quantity + Delete row */}
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      mt={1}
-                    >
-                      <TextField
-                        type="number"
-                        value={m.quantity}
-                        onChange={(e) =>
-                          handleQuantityChange(m.code, Number(e.target.value))
-                        }
-                        inputProps={{ min: 1 }}
-                        size="small"
-                        sx={{ width: "60px" }}
-                      />
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeleteModel(m.code)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
+            {/* Quantity + Delete row */}
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              mt={1}
+            >
+              <TextField
+                type="number"
+                value={m.quantity}
+                onChange={(e) =>
+                  handleQuantityChange(m.code, Number(e.target.value))
+                }
+                inputProps={{ min: 1 }}
+                size="small"
+                sx={{ width: "60px" }}
+              />
+              <IconButton
+                color="error"
+                onClick={() => handleDeleteModel(m.code)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+    ))}
+  </Grid>
+)}
+
 
         {/* Save Button */}
-        {scannedModels.length > 0 && (
+        {/* {scannedModels.length > 0 && (
           <Box textAlign="center" mt={3}>
             <Button variant="contained" onClick={handleSave}>
               Save & Send
+            </Button>
+          </Box>
+        )} */}
+
+{scannedModels.length > 0 && (
+  <Box textAlign="center" mt={3}>
+    <LoadingButton
+      variant="contained"
+      onClick={handleSave}
+      loading={isSaving} // ✅ shows spinner when true
+      loadingPosition="start"
+    >
+      {isSaving ? "Processing..." : "Save & Send"}
+    </LoadingButton>
+  </Box>
+)}
+
+
+         {scannedModels.length > 0 && (
+          <Box textAlign="center" mt={3}>
+            <Button variant="contained" onClick={previewPdf}>
+              preview pdf
             </Button>
           </Box>
         )}
