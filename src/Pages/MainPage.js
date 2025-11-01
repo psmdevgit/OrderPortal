@@ -124,10 +124,10 @@ export default function MainPage({ user }) {
 
 
   
-  const ApiBaseUrl = "https://kalash.app";
+  // const ApiBaseUrl = "https://kalash.app";
   const imageapi = "https://psmport.pothysswarnamahalapp.com/FactoryModels/";
   
-  // const ApiBaseUrl = "http://localhost:4001";
+  const ApiBaseUrl = "http://localhost:4001";
   // const imageapi = "http://192.168.5.13:8080/models/";
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -300,17 +300,29 @@ const handleScan = () => {
         // );
 
          // ✅ Step 5: Send vendor email
+        // await fetch(`${ApiBaseUrl}/api/send-email`, {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({
+        //     to: user.vendorEmail,
+        //     subject: `Order Confirmation - ${newOrderId}`,
+        //     message: `Dear ${user.vendorName},\n\nPlease find attached your order confirmation.`,
+        //     filename: `${newOrderId}_Vendor.pdf`,
+        //     pdfBase64: vendorPdfBase64,
+        //   }),
+        // });
         await fetch(`${ApiBaseUrl}/api/send-email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: user.vendorEmail,
-            subject: `Order Confirmation - ${newOrderId}`,
-            message: `Dear ${user.vendorName},\n\nPlease find attached your order confirmation.`,
-            filename: `${newOrderId}_Vendor.pdf`,
-            pdfBase64: vendorPdfBase64,
-          }),
-        });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    to: user.vendorEmail,
+    subject: `Order Confirmation - ${newOrderId}`,
+    message: `Dear ${user.vendorName},\n\nPlease find attached your order confirmation.`,
+    filename: `${newOrderId}_Vendor.pdf`,
+    pdfBase64: vendorPdfBase64,
+  }),
+});
+
 
         // ✅ Step 6: Send customer email
         // await fetch(`${ApiBaseUrl}/api/send-email`, {
@@ -507,7 +519,7 @@ const handleScan = () => {
     let totalQty = 0;
 
     scannedModels.forEach((m, i) => {
-      const line = `${i + 1}. ${cleanText(m.name)}`;
+      const line = `${cleanText(m.name)}`;        //${i + 1}.  
       const qty = `Qty: ${m.quantity}`;
       doc.text(line, 14, startY);
       doc.text(qty, pageWidth - 14, startY, { align: "right" });
