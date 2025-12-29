@@ -1,5 +1,9 @@
 import Navbar from "../components/NavBar";
 import jsPDF from "jspdf"; 
+
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -115,6 +119,75 @@ const previewPdf = async (order) => {
     alert("Error generating PDF. Please check console.");
   }
 };
+
+const previewExcel = (order: any) => {
+  // ---------- HEADER (TOP DETAILS) ----------
+
+  console.log(order);
+  const headerRows = [
+
+    [],
+    ["Order ID", order.OrderId, "", "Date", new Date(order.createdDate).toLocaleString()],
+    ["Vendor Name", order.Vendor_name],
+    ["Vendor Mobile", order.Vendor_mobileno],
+    ["Customer Name", order.Customer_Name],
+    ["Customer Mobile", order.Customer_mobileNo],
+    [],
+    ["Model No", "Quantity"], // Table header
+  ];
+
+  // ---------- ITEMS TABLE ----------
+  const itemRows = order.items.map((item: any) => [
+    item.ModelNo,
+    Number(item.Quantity.trim()),
+  ]);
+
+  // ---------- TOTAL ----------
+  const totalQty = order.items.reduce(
+    (sum: number, item: any) => sum + Number(item.Quantity.trim()),
+    0
+  );
+
+  const footerRows = [
+    [],
+    ["Total Quantity", totalQty],
+  ];
+
+  // ---------- COMBINE ALL ----------
+  const sheetData = [
+    ...headerRows,
+    ...itemRows,
+    ...footerRows,
+  ];
+
+  // ---------- CREATE SHEET ----------
+  const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+  // Column widths
+  worksheet["!cols"] = [
+    { wch: 25 },
+    { wch: 15 },
+    { wch: 10 },
+    { wch: 15 },
+    { wch: 25 },
+  ];
+
+  // ---------- CREATE WORKBOOK ----------
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Order Details");
+
+  // ---------- EXPORT ----------
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  saveAs(blob, `${order.OrderId}.xlsx`);
+}; 
 
 const generateOrderPDF = async (order, user, type) => {
   const doc = new jsPDF();
@@ -255,12 +328,26 @@ doc.text(`Total Quantity: ${totalQty}`, 14, startY);
               </Box>
 
               {order.items?.length > 0 && (
+
+                <div style={{display:"flex", gap:"10px"}}>
                <Button
   variant="contained"
   onClick={() => previewPdf(order)} // wrapped in arrow function
 >
-  Preview PDF
+  PDF
 </Button>
+
+    <Button
+  variant="contained" color="success" 
+  onClick={() => previewExcel(order)} // wrapped in arrow function
+>
+  Excel
+</Button>
+
+                </div>
+
+
+ 
 
               )}
 
