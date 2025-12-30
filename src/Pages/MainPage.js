@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef  } from "react";
 import { LoadingButton } from "@mui/lab";
+import DesignBank from "../Pages/DesignBank";
 
 // import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -26,6 +27,7 @@ function ModelImage({ imageName, imageapi }) {
   const [src, setSrc] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
 
   useEffect(() => {
     if (!imageName) return;
@@ -88,6 +90,7 @@ function ModelImage({ imageName, imageapi }) {
 export default function MainPage({ user }) {
 
  
+    const [activeView, setActiveView] = useState("scan"); 
   
   const [currentUser, setCurrentUser] = useState(user);
   
@@ -591,7 +594,19 @@ const handleScan = () => {
     
     <Box>
       <Navbar user={currentUser} />
-      <Box p={3}>
+
+       <div  style={{display:'flex', justifyContent:'center', gap:"10px", padding:'10px'}}>
+          <Button color="primary" variant="contained"   onClick={() => setActiveView("scan")}>Scan Model</Button>          
+          <Button color="success" variant="contained"   onClick={() => setActiveView("design")}> Design Bank</Button>
+        </div>
+
+
+  {/* CONTENT AREA */}
+      <Box sx={{ padding: 2 }}>
+        {activeView === "scan" && 
+         <Box p={3}>
+
+       
         <Typography variant="h5" mb={2}>
           Scan Models
         </Typography>
@@ -703,10 +718,19 @@ const handleScan = () => {
             </Button>
           </Box>
         )}
+      </Box>}
+
+
+        {activeView === "design" && <DesignBank user={user} />}
       </Box>
+
+
+
+     
     </Box>
   );
 }
+
 
 
 
