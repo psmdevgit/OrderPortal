@@ -633,60 +633,58 @@ const handleScan = () => {
     spacing={5}
     justifyContent={isMobile ? "center" : "flex-start"} // Center on mobile
   >
-    // {scannedModels.map((m) => (
-    //   <Grid item xs={6} sm={6} md={3} lg={3} key={m.code}>
-    //     <Card
-    //       sx={{
-    //         borderRadius: 2,
-    //         boxShadow: 3,
-    //         p: 1,
-    //         height: "100%",
-    //         width: "100%",
-    //         transition: "transform 0.2s",
-    //         "&:hover": { transform: "scale(1.02)" },
-    //       }}
-    //     >
-    //       <ModelImage imageName={m.name} imageapi={imageapi} />
-    //       <CardContent sx={{ p: 1 }}>
-    //         <Typography
-    //           variant="subtitle1"
-    //           fontWeight="bold"
-    //           sx={{ mt: 1, textAlign: "center" }}
-    //         >
-    //           {m.name}
-    //         </Typography>
+    {/* {scannedModels.map((m) => (
+      <Grid item xs={6} sm={6} md={3} lg={3} key={m.code}>
+        <Card
+          sx={{
+            borderRadius: 2,
+            boxShadow: 3,
+            p: 1,
+            height: "100%",
+            width: "100%",
+            transition: "transform 0.2s",
+            "&:hover": { transform: "scale(1.02)" },
+          }}
+        >
+          <ModelImage imageName={m.name} imageapi={imageapi} />
+          <CardContent sx={{ p: 1 }}>
+            <Typography
+              variant="subtitle1"
+              fontWeight="bold"
+              sx={{ mt: 1, textAlign: "center" }}
+            >
+              {m.name}
+            </Typography>
 
-    //         {/* Quantity + Delete row */}
-    //         <Box
-    //           display="flex"
-    //           alignItems="center"
-    //           justifyContent="space-between"
-    //           mt={1}
-    //         >
-    //           <TextField
-    //             type="number"
-    //             value={m.quantity}
-    //             onChange={(e) =>
-    //               handleQuantityChange(m.code, Number(e.target.value))
-    //             }
-    //             inputProps={{ min: 1 }}
-    //             size="small"
-    //             sx={{ width: "60px" }}
-    //           />
-    //           <IconButton
-    //             color="error"
-    //             onClick={() => handleDeleteModel(m.code)}
-    //           >
-    //             <DeleteIcon />
-    //           </IconButton>
-    //         </Box>
-    //       </CardContent>
-    //     </Card>
-    //   </Grid>
-    // ))}
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              mt={1}
+            >
+              <TextField
+                type="number"
+                value={m.quantity}
+                onChange={(e) =>
+                  handleQuantityChange(m.code, Number(e.target.value))
+                }
+                inputProps={{ min: 1 }}
+                size="small"
+                sx={{ width: "60px" }}
+              />
+              <IconButton
+                color="error"
+                onClick={() => handleDeleteModel(m.code)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Box>
+          </CardContent>
+        </Card>
+      </Grid>
+    ))} */}
 
-
-         {[...scannedModels].reverse().map((m) => (
+    {[...scannedModels].reverse().map((m) => (
   <Grid item xs={6} sm={6} md={3} lg={3} key={m.code}>
     <Card
       sx={{
@@ -739,7 +737,8 @@ const handleScan = () => {
     </Card>
   </Grid>
 ))}
-  
+
+
   </Grid>
 )}
 
@@ -786,7 +785,6 @@ const handleScan = () => {
     </Box>
   );
 }
-
 
 
 
